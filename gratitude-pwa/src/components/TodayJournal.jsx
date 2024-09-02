@@ -8,7 +8,10 @@ function TodayJournal() {
     e.preventDefault();
     if (entry.trim()) {
       const date = new Date().toISOString();
-      const newEntry = { date, content: entry };
+      const newEntry = {
+        date,
+        content: entry.split('\n').map(line => `- ${line.trim()}`).join('\n') // Convert each line to a bullet point
+      };
       const storedEntries = JSON.parse(localStorage.getItem('journalEntries') || '[]');
       const updatedEntries = [...storedEntries, newEntry];
       localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -26,9 +29,10 @@ function TodayJournal() {
             className="form-control"
             value={entry}
             onChange={(e) => setEntry(e.target.value)}
-            placeholder="What are you grateful for today?"
-            rows="4"
+            placeholder="Write your notes, each on a new line..."
+            rows="6"
             required
+            style={{ resize: 'none' }}
           ></textarea>
         </div>
         <button type="submit" className="btn btn-primary">Save Entry</button>

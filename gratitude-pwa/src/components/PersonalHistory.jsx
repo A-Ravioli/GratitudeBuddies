@@ -20,7 +20,7 @@ function PersonalHistory() {
           <div key={index} className="card mb-3">
             <div className="card-body">
               <h5 className="card-title">{new Date(entry.date).toLocaleDateString()}</h5>
-              <p className="card-text">{entry.content}</p>
+              <pre className="card-text" style={{ whiteSpace: 'pre-wrap' }}>{entry.content}</pre>
             </div>
           </div>
         ))
