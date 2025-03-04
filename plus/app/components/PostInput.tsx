@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -9,9 +9,12 @@ import {
   Image,
   Alert,
   Keyboard,
+  Animated,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { BulletPoint } from '../types';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, typography, spacing, radius, shadows } from '../utils/theme';
 
 interface PostInputProps {
   onSubmit: (bullets: BulletPoint[]) => void;
@@ -23,6 +26,39 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday, isTestM
   const [bullets, setBullets] = useState<BulletPoint[]>([
     { id: '1', text: '' },
   ]);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setIsKeyboardVisible(true);
+        Animated.timing(slideAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setIsKeyboardVisible(false);
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   const handleTextChange = (text: string, index: number) => {
     // Check if text contains an image trigger (e.g., typing "img" or pressing a special key)
@@ -43,6 +79,11 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday, isTestM
       text: '',
     };
     setBullets([...bullets, newBullet]);
+    
+    // Scroll to the bottom after adding a new bullet
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   };
 
   const removeBullet = (index: number) => {
@@ -108,11 +149,21 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday, isTestM
     return null; // Don't show anything if already posted
   }
 
+  // Calculate the button position based on keyboard state
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -60],
+  });
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>What are you thinking?</Text>
+      <Text style={styles.title}>What are you grateful for today?</Text>
       
-      <ScrollView style={styles.bulletContainer}>
+      <ScrollView 
+        style={styles.bulletContainer}
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+      >
         {bullets.map((bullet, index) => (
           <View key={bullet.id} style={styles.bulletInputContainer}>
             <View style={styles.bulletRow}>
@@ -122,14 +173,16 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday, isTestM
                 value={bullet.text}
                 onChangeText={(text) => handleTextChange(text, index)}
                 placeholder="Add a gratitude item... (type 'img' to add an image)"
-                placeholderTextColor="#666"
+                placeholderTextColor={colors.text.disabled}
                 multiline
+                blurOnSubmit={false}
               />
               <TouchableOpacity
                 style={styles.removeButton}
                 onPress={() => removeBullet(index)}
+                activeOpacity={0.7}
               >
-                <Text style={styles.removeButtonText}>×</Text>
+                <Ionicons name="close-circle" size={20} color={colors.accent.danger} />
               </TouchableOpacity>
             </View>
             
@@ -139,24 +192,34 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday, isTestM
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => removeImage(index)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.removeButtonText}>×</Text>
+                  <Ionicons name="close-circle" size={20} color="#fff" />
                 </TouchableOpacity>
               </View>
             )}
           </View>
         ))}
-      </ScrollView>
-      
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.addButton} onPress={addBullet}>
-          <Text style={styles.addButtonText}>+ Add Item</Text>
-        </TouchableOpacity>
         
-        <TouchableOpacity style={styles.postButton} onPress={handleSubmit}>
-          <Text style={styles.postButtonText}>Post</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={styles.addButton} 
+            onPress={addBullet}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={20} color={colors.primary} />
+            <Text style={styles.addButtonText}>Add Item</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.postButton} 
+            onPress={handleSubmit}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.postButtonText}>Post</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
       
       {hasPostedToday && isTestMode && (
         <Text style={styles.testModeText}>Test Mode: Posts won't be saved</Text>
@@ -167,65 +230,66 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday, isTestM
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#1a1a1a',
+    padding: spacing.md,
+    backgroundColor: colors.background.card,
+    borderRadius: radius.md,
+    margin: spacing.md,
+    ...shadows.sm,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#ccc',
-    marginBottom: 16,
+    fontSize: typography.fontSizes.xl,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
   bulletContainer: {
     maxHeight: 300,
+    marginBottom: spacing.md,
   },
   bulletInputContainer: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   bulletRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   bulletPoint: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
+    width: 12,
+    height: 12,
+    borderRadius: radius.round,
+    backgroundColor: colors.primary,
     marginTop: 12,
-    marginRight: 10,
+    marginRight: spacing.sm,
   },
   input: {
     flex: 1,
     minHeight: 40,
-    color: '#fff',
-    fontSize: 16,
-    paddingVertical: 8,
+    color: colors.text.primary,
+    fontSize: typography.fontSizes.md,
+    paddingVertical: spacing.sm,
   },
   removeButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  removeButtonText: {
-    fontSize: 20,
-    color: '#ff6b6b',
-    fontWeight: 'bold',
+    padding: spacing.sm,
+    marginLeft: spacing.xs,
   },
   imageContainer: {
-    marginTop: 8,
-    marginLeft: 20,
+    marginTop: spacing.sm,
+    marginLeft: spacing.lg,
     position: 'relative',
+    borderRadius: radius.md,
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: 150,
-    borderRadius: 8,
+    borderRadius: radius.md,
   },
   removeImageButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: spacing.sm,
+    right: spacing.sm,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 15,
+    borderRadius: radius.round,
     width: 30,
     height: 30,
     alignItems: 'center',
@@ -234,35 +298,43 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingBottom: spacing.md,
   },
   addButton: {
-    padding: 12,
-    borderRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: '#555',
+    borderColor: colors.border.medium,
+    backgroundColor: colors.background.input,
   },
   addButtonText: {
-    color: '#4CAF50',
-    fontSize: 16,
+    color: colors.primary,
+    fontSize: typography.fontSizes.md,
+    marginLeft: spacing.xs,
+    fontWeight: typography.fontWeights.medium,
   },
   postButton: {
-    backgroundColor: '#4CAF50',
-    padding: 12,
-    borderRadius: 4,
-    minWidth: 100,
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    minWidth: 120,
     alignItems: 'center',
+    ...shadows.sm,
   },
   postButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    color: colors.text.primary,
+    fontSize: typography.fontSizes.md,
+    fontWeight: typography.fontWeights.semibold,
   },
   testModeText: {
-    color: '#ff6b6b',
-    fontSize: 14,
+    color: colors.accent.danger,
+    fontSize: typography.fontSizes.sm,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
 });
 

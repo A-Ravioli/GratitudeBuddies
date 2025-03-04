@@ -10,10 +10,14 @@
     "splash": {
       "backgroundColor": "#121212"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow Plus to access your photos to add images to your gratitude journal."
+        "NSPhotoLibraryUsageDescription": "Allow Plus to access your photos to add images to your gratitude journal.",
+        "UIUserInterfaceStyle": "Dark"
       }
     },
     "android": {
@@ -21,7 +25,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#121212"
       },
-      "permissions": ["READ_EXTERNAL_STORAGE"]
+      "permissions": [
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "userInterfaceStyle": "dark"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,7 +39,10 @@
         {
           "photosPermission": "Allow Plus to access your photos to add images to your gratitude journal."
         }
-      ]
-    ]
+      ],
+      "expo-asset"
+    ],
+    "description": "A Twitter-esque app for gratitude journaling with your friends. Share positive moments in a bullet-journal style.",
+    "primaryColor": "#4CAF50"
   }
 }
