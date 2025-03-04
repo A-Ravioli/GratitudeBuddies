@@ -12,13 +12,25 @@ const PostItem: React.FC<PostItemProps> = ({ post }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.date}>{post.date}</Text>
+        <View style={styles.userInfo}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{post.username[0].toUpperCase()}</Text>
+          </View>
+          <View>
+            <Text style={styles.username}>{post.username}</Text>
+            <Text style={styles.date}>{post.date}</Text>
+          </View>
+        </View>
         <Text style={styles.timeAgo}>{getTimeAgo(post.createdAt)}</Text>
       </View>
       
       <View style={styles.bulletList}>
-        {post.bullets.map((bullet) => (
-          <BulletPoint key={bullet.id} bullet={bullet} />
+        {post.bullets.map((bullet, index) => (
+          <BulletPoint 
+            key={bullet.id} 
+            bullet={bullet}
+            isLast={index === post.bullets.length - 1}
+          />
         ))}
       </View>
     </View>
@@ -28,19 +40,44 @@ const PostItem: React.FC<PostItemProps> = ({ post }) => {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 24,
-    borderLeftWidth: 2,
-    borderLeftColor: '#333',
-    paddingLeft: 16,
+    padding: 16,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    marginHorizontal: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
+    alignItems: 'center',
   },
-  date: {
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#ccc',
+    marginBottom: 2,
+  },
+  date: {
+    fontSize: 14,
+    color: '#888',
   },
   timeAgo: {
     fontSize: 14,

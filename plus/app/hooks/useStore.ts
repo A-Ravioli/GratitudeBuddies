@@ -109,6 +109,43 @@ export const useStore = () => {
     await Storage.saveHasPostedToday(true);
   };
 
+  // Update user profile
+  const updateUser = async (user: User) => {
+    setState({
+      ...state,
+      currentUser: user,
+    });
+    await Storage.saveUser(user);
+  };
+
+  // Add a friend
+  const addFriend = async (username: string) => {
+    // In a real app, you would make an API call to verify the username
+    // and get the user's details. For now, we'll create a mock friend.
+    const newFriend: User = {
+      id: Date.now().toString(),
+      username,
+      name: username, // In a real app, this would come from the API
+    };
+
+    const updatedFriends = [...state.friends, newFriend];
+    setState({
+      ...state,
+      friends: updatedFriends,
+    });
+    await Storage.saveFriends(updatedFriends);
+  };
+
+  // Remove a friend
+  const removeFriend = async (friendId: string) => {
+    const updatedFriends = state.friends.filter(friend => friend.id !== friendId);
+    setState({
+      ...state,
+      friends: updatedFriends,
+    });
+    await Storage.saveFriends(updatedFriends);
+  };
+
   // Reset hasPostedToday flag at midnight
   useEffect(() => {
     const checkDate = () => {
@@ -136,5 +173,8 @@ export const useStore = () => {
   return {
     ...state,
     addPost,
+    updateUser,
+    addFriend,
+    removeFriend,
   };
 }; 

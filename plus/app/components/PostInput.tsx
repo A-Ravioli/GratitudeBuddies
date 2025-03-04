@@ -8,23 +8,30 @@ import {
   ScrollView,
   Image,
   Alert,
+  Keyboard,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { BulletPoint } from '../types';
-import BulletPointComponent from './BulletPoint';
 
 interface PostInputProps {
   onSubmit: (bullets: BulletPoint[]) => void;
   hasPostedToday: boolean;
+  isTestMode?: boolean;
 }
 
-const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday }) => {
+const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday, isTestMode = false }) => {
   const [bullets, setBullets] = useState<BulletPoint[]>([
     { id: '1', text: '' },
   ]);
-  const [currentBulletIndex, setCurrentBulletIndex] = useState(0);
 
   const handleTextChange = (text: string, index: number) => {
+    // Check if text contains an image trigger (e.g., typing "img" or pressing a special key)
+    if (text.endsWith(' img ')) {
+      pickImage(index);
+      // Remove the "img" trigger from the text
+      text = text.slice(0, -4);
+    }
+    
     const updatedBullets = [...bullets];
     updatedBullets[index] = { ...updatedBullets[index], text };
     setBullets(updatedBullets);
@@ -36,20 +43,17 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday }) => {
       text: '',
     };
     setBullets([...bullets, newBullet]);
-    setCurrentBulletIndex(bullets.length);
   };
 
   const removeBullet = (index: number) => {
     if (bullets.length === 1) {
       // Don't remove the last bullet, just clear it
       setBullets([{ id: Date.now().toString(), text: '' }]);
-      setCurrentBulletIndex(0);
       return;
     }
 
     const updatedBullets = bullets.filter((_, i) => i !== index);
     setBullets(updatedBullets);
-    setCurrentBulletIndex(Math.min(currentBulletIndex, updatedBullets.length - 1));
   };
 
   const pickImage = async (index: number) => {
@@ -97,17 +101,11 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday }) => {
     
     // Reset the form
     setBullets([{ id: Date.now().toString(), text: '' }]);
-    setCurrentBulletIndex(0);
+    Keyboard.dismiss();
   };
 
-  if (hasPostedToday) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.postedMessage}>
-          You've already posted today! Come back tomorrow for a new entry.
-        </Text>
-      </View>
-    );
+  if (hasPostedToday && !isTestMode) {
+    return null; // Don't show anything if already posted
   }
 
   return (
@@ -123,7 +121,7 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday }) => {
                 style={styles.input}
                 value={bullet.text}
                 onChangeText={(text) => handleTextChange(text, index)}
-                placeholder="Add a gratitude item..."
+                placeholder="Add a gratitude item... (type 'img' to add an image)"
                 placeholderTextColor="#666"
                 multiline
               />
@@ -135,7 +133,7 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday }) => {
               </TouchableOpacity>
             </View>
             
-            {bullet.imageUri ? (
+            {bullet.imageUri && (
               <View style={styles.imageContainer}>
                 <Image source={{ uri: bullet.imageUri }} style={styles.image} />
                 <TouchableOpacity
@@ -145,13 +143,6 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday }) => {
                   <Text style={styles.removeButtonText}>×</Text>
                 </TouchableOpacity>
               </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.addImageButton}
-                onPress={() => pickImage(index)}
-              >
-                <Text style={styles.addImageButtonText}>+ Add Image</Text>
-              </TouchableOpacity>
             )}
           </View>
         ))}
@@ -166,6 +157,10 @@ const PostInput: React.FC<PostInputProps> = ({ onSubmit, hasPostedToday }) => {
           <Text style={styles.postButtonText}>Post</Text>
         </TouchableOpacity>
       </View>
+      
+      {hasPostedToday && isTestMode && (
+        <Text style={styles.testModeText}>Test Mode: Posts won't be saved</Text>
+      )}
     </View>
   );
 };
@@ -236,19 +231,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addImageButton: {
-    marginTop: 8,
-    marginLeft: 20,
-    padding: 8,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#555',
-    alignSelf: 'flex-start',
-  },
-  addImageButtonText: {
-    color: '#4CAF50',
-    fontSize: 14,
-  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -276,11 +258,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  postedMessage: {
-    color: '#ccc',
-    fontSize: 16,
+  testModeText: {
+    color: '#ff6b6b',
+    fontSize: 14,
     textAlign: 'center',
-    padding: 20,
+    marginTop: 8,
   },
 });
 

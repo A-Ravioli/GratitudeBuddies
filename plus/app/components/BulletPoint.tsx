@@ -5,12 +5,16 @@ import { BulletPoint as BulletPointType } from '../types';
 interface BulletPointProps {
   bullet: BulletPointType;
   isEditing?: boolean;
+  isLast?: boolean;
 }
 
-const BulletPoint: React.FC<BulletPointProps> = ({ bullet, isEditing = false }) => {
+const BulletPoint: React.FC<BulletPointProps> = ({ bullet, isEditing = false, isLast = false }) => {
   return (
     <View style={styles.bulletContainer}>
-      <View style={styles.bulletPoint} />
+      <View style={styles.bulletLineContainer}>
+        <View style={styles.bulletPoint} />
+        {!isLast && <View style={styles.verticalLine} />}
+      </View>
       <View style={styles.contentContainer}>
         <Text style={styles.text}>{bullet.text}</Text>
         {bullet.imageUri && (
@@ -27,13 +31,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'flex-start',
   },
+  bulletLineContainer: {
+    alignItems: 'center',
+    marginRight: 10,
+  },
   bulletPoint: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: '#4CAF50',
     marginTop: 6,
-    marginRight: 10,
+  },
+  verticalLine: {
+    width: 2,
+    height: '100%',
+    backgroundColor: '#333',
+    position: 'absolute',
+    top: 16,
   },
   contentContainer: {
     flex: 1,
